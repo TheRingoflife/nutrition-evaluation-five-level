@@ -144,11 +144,11 @@ if st.sidebar.button("🧮 Predict"):
     st.subheader("📈 SHAP Force Plot (Model Explanation)")
     with st.expander("Click to view SHAP force plot"):
         shap_values = explainer(user_scaled_df)
-        shap_for_sample = shap_values[0]  # 修正：获取第一个（也是唯一）样本的解释
+        shap_for_sample = shap_values[0]
         force_html = shap.force_plot(
-            base_value=shap_for_sample.base_values,
-            shap_values=shap_for_sample.values,
-            features=shap_for_sample.data,
+            explainer.expected_value,
+            shap_for_sample.values,
+            shap_for_sample.data,
             feature_names=shap_for_sample.feature_names,
             matplotlib=False
         )
