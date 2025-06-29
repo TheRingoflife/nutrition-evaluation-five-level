@@ -57,32 +57,45 @@ def draw_nutriscore_final(predicted_label):
     colors = ['#00843D', '#A8C92D', '#FECB00', '#EF7D00', '#E60012']
     fig, ax = plt.subplots(figsize=(6.5, 2.5))
 
-    background = patches.FancyBboxPatch((0, 0), 5, 1.2,
+    background = patches.FancyBboxPatch(
+        (0, 0), 5, 1.2,
         boxstyle="round,pad=0.1,rounding_size=0.1",
-        edgecolor='gray', facecolor='white', linewidth=2)
+        edgecolor='gray', facecolor='white',
+        linewidth=2
+    )
     ax.add_patch(background)
 
     for i, (label, color) in enumerate(zip(labels, colors)):
-        rect = patches.FancyBboxPatch((i, 0), 1, 1,
+        rect = patches.FancyBboxPatch(
+            (i, 0), 1, 1,
             boxstyle="round,pad=0.02,rounding_size=0.05",
-            facecolor=color, edgecolor='white', linewidth=0.5)
+            facecolor=color,
+            edgecolor='white',
+            linewidth=0.5
+        )
         ax.add_patch(rect)
 
         if label == predicted_label.upper():
-            circle = patches.Circle((i + 0.5, 0.5), radius=0.55,
-                facecolor='white', alpha=0.25, edgecolor=None, zorder=2)
+            circle = patches.Circle(
+                (i + 0.5, 0.5), radius=0.55,
+                facecolor='white', alpha=0.25,
+                edgecolor=None, zorder=2
+            )
             ax.add_patch(circle)
             ax.text(i + 0.5, 0.5, label,
-                ha='center', va='center', fontsize=36,
-                weight='bold', color='white', zorder=3)
+                    ha='center', va='center',
+                    fontsize=36, weight='bold',
+                    color='white', zorder=3)
         else:
             ax.text(i + 0.5, 0.5, label,
-                ha='center', va='center', fontsize=26,
-                weight='bold', color='white', alpha=0.3, zorder=2)
+                    ha='center', va='center',
+                    fontsize=26, weight='bold',
+                    color='white', alpha=0.3, zorder=2)
 
     ax.text(2.5, 1.15, 'PREDICTED HEALTHINESS',
-        ha='center', va='bottom', fontsize=14,
-        weight='bold', color='black')
+            ha='center', va='bottom',
+            fontsize=14, weight='bold', color='black')
+
     ax.set_xlim(0, 5)
     ax.set_ylim(0, 1.4)
     ax.axis('off')
@@ -103,30 +116,29 @@ nutclaim3 = st.sidebar.selectbox("Specific Nutrient Claim (nutclaim3)", [0, 1])
 
 # ===== 预测逻辑 =====
 if st.sidebar.button("🧮 Predict"):
-    scaled_columns = ['Sodium', 'Protein', 'Energy', 'Total fat', 'weight',
-                      'ifclaim', 'ifnurclaim', 'nutclaim3']
-    final_columns = scaled_columns + ['procef_4']
-
-    input_dict = {
-        "Sodium": sodium,
+    numeric_dict = {
         "Protein": protein,
+        "Sodium": sodium,
         "Energy": energy,
         "Total fat": total_fat,
-        "weight": weight,
-        "ifclaim": ifclaim,
-        "ifnurclaim": ifnurclaim,
-        "nutclaim3": nutclaim3
+        "weight": weight
     }
+    numeric_df = pd.DataFrame([numeric_dict])
+    numeric_scaled = scaler.transform(numeric_df)
+    numeric_scaled_df = pd.DataFrame(numeric_scaled, columns=numeric_df.columns)
 
-    user_input_for_scaler = pd.DataFrame([[input_dict[feat] for feat in scaled_columns]], columns=scaled_columns)
-    user_scaled_part = scaler.transform(user_input_for_scaler)
-    user_scaled_df = pd.DataFrame(user_scaled_part, columns=scaled_columns)
+    # 添加非标准化特征
+    numeric_scaled_df["ifclaim"] = ifclaim
+    numeric_scaled_df["ifnurclaim"] = ifnurclaim
+    numeric_scaled_df["nutclaim3"] = nutclaim3
+    numeric_scaled_df["procef_4"] = profcef_4 = procef_4
 
-    user_scaled_df["procef_4"] = procef_4
-    user_scaled_df = user_scaled_df[final_columns]
+    final_columns = ['Sodium', 'Protein', 'Energy', 'Total fat', 'weight',
+                     'ifclaim', 'ifnurclaim', 'nutclaim3', 'procef_4']
+    user_input = numeric_scaled_df[final_columns]
 
-    prediction = model.predict(user_scaled_df)[0]
-    prob_array = model.predict_proba(user_scaled_df)[0]
+    prediction = model.predict(user_input)[0]
+    prob_array = model.predict_proba(user_input)[0]
     label_map = {0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A'}
     predicted_label = label_map.get(prediction, f"Class {prediction}")
 
@@ -143,13 +155,13 @@ if st.sidebar.button("🧮 Predict"):
 
     st.subheader("📈 SHAP Force Plot (Model Explanation)")
     with st.expander("Click to view SHAP force plot"):
-        shap_values = explainer(user_scaled_df)
-        shap_for_predicted_class = shap_values[prediction]
+        shap_values = explainer(user_input)
+        shap_for_sample = shap_values[0]
         force_html = shap.force_plot(
-            base_value=shap_for_predicted_class.base_values,
-            shap_values=shap_for_predicted_class.values,
-            features=shap_for_predicted_class.data,
-            feature_names=shap_for_predicted_class.feature_names,
+            base_value=shap_for_sample.base_values,
+            shap_values=shap_for_sample.values,
+            features=shap_for_sample.data,
+            feature_names=shap_for_sample.feature_names,
             matplotlib=False
         )
         components.html(shap.getjs() + force_html.html(), height=400)
