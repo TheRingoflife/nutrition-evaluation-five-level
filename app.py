@@ -25,9 +25,9 @@ This app uses a trained XGBoost model to classify the overall healthiness of a r
 @st.cache_resource
 def load_model():
     try:
-        return joblib.load("XGBoost_retrained_model.pkl")
+        return joblib.load("XGBoost_final_model_selected_9.pkl")
     except FileNotFoundError:
-        st.error("❌ Model file not found. Please upload 'XGBoost_retrained_model.pkl'.")
+        st.error("❌ Model file not found. Please upload 'XGBoost_final_model_selected_9.pkl'.")
         st.stop()
 
 @st.cache_resource
