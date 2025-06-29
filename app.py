@@ -141,18 +141,22 @@ if st.sidebar.button("🧮 Predict"):
     })
     st.dataframe(prob_df, use_container_width=True)
 
-    st.subheader("📈 SHAP Force Plot (Model Explanation)")
-with st.expander("Click to view SHAP force plot"):
-    shap_values = explainer(user_scaled_df)
-    shap_html = shap.plots.force(
-        explainer.expected_value,
-        shap_values.values,
-        shap_values.data,
-        feature_names=shap_values.feature_names,
-        matplotlib=False
-    )
-    components.html(shap.getjs() + shap_html.html(), height=400)
+    st.subheader("📈 SHAP Force Plot (All Classes)")
+    shap_values = explainer(user_scaled_df)  # shape: [samples, features, classes]
 
+    label_map = {0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A'}
+    sample_index = 0
+
+    for class_index in range(shap_values.values.shape[2]):
+        with st.expander(f"🔍 SHAP for Class {label_map[class_index]}"):
+            force_plot_html = shap.plots.force(
+                base_value=explainer.expected_value[class_index],
+                shap_values=shap_values.values[sample_index, :, class_index],
+                features=user_scaled_df.iloc[sample_index],
+                matplotlib=False,
+                show=False
+            )
+            components.html(shap.getjs() + force_plot_html.html(), height=400)
 
 
 # ===== 页脚 =====
