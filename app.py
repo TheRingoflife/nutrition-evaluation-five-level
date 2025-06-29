@@ -142,17 +142,16 @@ if st.sidebar.button("🧮 Predict"):
     st.dataframe(prob_df, use_container_width=True)
 
     st.subheader("📈 SHAP Force Plot (Model Explanation)")
-    with st.expander("Click to view SHAP force plot"):
-        shap_values = explainer(user_scaled_df)
-        shap_for_sample = shap_values[0]
-        force_html = shap.force_plot(
-            explainer.expected_value,
-            shap_for_sample.values,
-            shap_for_sample.data,
-            feature_names=shap_for_sample.feature_names,
-            matplotlib=False
-        )
-        components.html(shap.getjs() + force_html.html(), height=400)
+with st.expander("Click to view SHAP force plot"):
+    shap_values = explainer(user_scaled_df)
+    shap_html = shap.plots.force(
+        explainer.expected_value,
+        shap_values.values,
+        shap_values.data,
+        feature_names=shap_values.feature_names,
+        matplotlib=False
+    )
+    components.html(shap.getjs() + shap_html.html(), height=400)
 
 
 
