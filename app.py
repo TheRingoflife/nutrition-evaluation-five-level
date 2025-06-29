@@ -57,47 +57,32 @@ def draw_nutriscore_final(predicted_label):
     colors = ['#00843D', '#A8C92D', '#FECB00', '#EF7D00', '#E60012']
     fig, ax = plt.subplots(figsize=(6.5, 2.5))
 
-    # 背景白色圆角
-    background = patches.FancyBboxPatch(
-        (0, 0), 5, 1.2,
+    background = patches.FancyBboxPatch((0, 0), 5, 1.2,
         boxstyle="round,pad=0.1,rounding_size=0.1",
-        edgecolor='gray', facecolor='white',
-        linewidth=2
-    )
+        edgecolor='gray', facecolor='white', linewidth=2)
     ax.add_patch(background)
 
     for i, (label, color) in enumerate(zip(labels, colors)):
-        rect = patches.FancyBboxPatch(
-            (i, 0), 1, 1,
+        rect = patches.FancyBboxPatch((i, 0), 1, 1,
             boxstyle="round,pad=0.02,rounding_size=0.05",
-            facecolor=color,
-            edgecolor='white',
-            linewidth=0.5
-        )
+            facecolor=color, edgecolor='white', linewidth=0.5)
         ax.add_patch(rect)
 
         if label == predicted_label.upper():
-            circle = patches.Circle(
-                (i + 0.5, 0.5), radius=0.55,
-                facecolor='white', alpha=0.25,
-                edgecolor=None, zorder=2
-            )
+            circle = patches.Circle((i + 0.5, 0.5), radius=0.55,
+                facecolor='white', alpha=0.25, edgecolor=None, zorder=2)
             ax.add_patch(circle)
             ax.text(i + 0.5, 0.5, label,
-                    ha='center', va='center',
-                    fontsize=36, weight='bold',
-                    color='white', zorder=3)
+                ha='center', va='center', fontsize=36,
+                weight='bold', color='white', zorder=3)
         else:
             ax.text(i + 0.5, 0.5, label,
-                    ha='center', va='center',
-                    fontsize=26, weight='bold',
-                    color='white', alpha=0.3, zorder=2)
+                ha='center', va='center', fontsize=26,
+                weight='bold', color='white', alpha=0.3, zorder=2)
 
-    # 可选标题
     ax.text(2.5, 1.15, 'PREDICTED HEALTHINESS',
-            ha='center', va='bottom',
-            fontsize=14, weight='bold', color='black')
-
+        ha='center', va='bottom', fontsize=14,
+        weight='bold', color='black')
     ax.set_xlim(0, 5)
     ax.set_ylim(0, 1.4)
     ax.axis('off')
@@ -118,25 +103,26 @@ nutclaim3 = st.sidebar.selectbox("Specific Nutrient Claim (nutclaim3)", [0, 1])
 
 # ===== 预测逻辑 =====
 if st.sidebar.button("🧮 Predict"):
-    expected_columns = list(scaler.feature_names_in_)
+    scaled_columns = ['Sodium', 'Protein', 'Energy', 'Total fat', 'weight',
+                      'ifclaim', 'ifnurclaim', 'nutclaim3']
+    final_columns = scaled_columns + ['procef_4']
+
     input_dict = {
-        "Protein": protein,
         "Sodium": sodium,
+        "Protein": protein,
         "Energy": energy,
         "Total fat": total_fat,
-        "weight": weight
+        "weight": weight,
+        "ifclaim": ifclaim,
+        "ifnurclaim": ifnurclaim,
+        "nutclaim3": nutclaim3
     }
-    user_input_for_scaler = pd.DataFrame([[input_dict[feat] for feat in expected_columns]], columns=expected_columns)
+
+    user_input_for_scaler = pd.DataFrame([[input_dict[feat] for feat in scaled_columns]], columns=scaled_columns)
     user_scaled_part = scaler.transform(user_input_for_scaler)
-    user_scaled_df = pd.DataFrame(user_scaled_part, columns=expected_columns)
+    user_scaled_df = pd.DataFrame(user_scaled_part, columns=scaled_columns)
 
     user_scaled_df["procef_4"] = procef_4
-    user_scaled_df["ifclaim"] = ifclaim
-    user_scaled_df["ifnurclaim"] = ifnurclaim
-    user_scaled_df["nutclaim3"] = nutclaim3
-
-    final_columns = ['Sodium', 'Protein', 'Energy', 'Total fat', 'weight',
-                     'ifclaim', 'ifnurclaim', 'nutclaim3', 'procef_4']
     user_scaled_df = user_scaled_df[final_columns]
 
     prediction = model.predict(user_scaled_df)[0]
