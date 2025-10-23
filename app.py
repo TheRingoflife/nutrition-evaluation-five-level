@@ -4,161 +4,453 @@ import pandas as pd
 import joblib
 import shap
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import streamlit.components.v1 as components
 
-# ===== 页面设置 =====
-st.set_page_config(page_title="Nutritional Quality Classifier", layout="wide")
-st.title("🍱 Predicting Nutritional Healthiness of Ready Food")
-st.markdown("""
-This app uses a trained XGBoost model to classify the overall healthiness of a ready-to-eat food into five levels (HSR grades A to E).  
-**Input variables explanation**:
-- `Protein`, `Sodium`, `Total fat`, `Energy`: Nutrient values per 100g  
-- `weight`: Total package weight (g)  
-- `procef_4`: 1 = ultra-processed, 0 = not  
-- `ifclaim`: Whether any nutrition/health/other claim exists (1/0)  
-- `ifnurclaim`: Whether a nutrition claim is present  
-- `nutclaim3`: Specific type of nutrient claim
-""")
+# 设置matplotlib参数，避免重叠
+plt.rcParams.update({
+    'font.size': 10,
+    'axes.titlesize': 14,
+    'axes.labelsize': 12,
+    'xtick.labelsize': 10,
+    'ytick.labelsize': 10,
+    'legend.fontsize': 10,
+    'figure.titlesize': 16
+})
 
-# ===== 加载模型、标准化器和背景数据 =====
+# ===== 多语言支持 =====
+LANGUAGES = {
+    "English": "en",
+    "中文": "zh"
+}
+
+TEXTS = {
+    "en": {
+        "title": "🍱 Nutritional Quality Classifier",
+        "subtitle": "ML-Powered Ready-to-Eat Food Health Assessment (5-Class A-E)",
+        "description": "This advanced machine learning application uses XGBoost to predict the nutritional healthiness of ready-to-eat foods based on 6 key nutritional features with 5 health grades (A-E).",
+        "target_audience": "🎯 Target Audience",
+        "audience_desc": "Designed for countries with limited nutritional information and consumers seeking quick, reliable food health assessments.",
+        "problem_statement": "📊 Problem Statement",
+        "problem_desc": "Many countries lack comprehensive nutritional labeling systems, making it difficult to implement generalized positive labeling for food products.",
+        "solution": "💡 Our Solution",
+        "solution_desc": "Advanced ML model analyzes 6 key nutritional features to provide instant, accurate health predictions with detailed explanations across 5 health grades (A-E).",
+        "mission": "🚀 Mission",
+        "mission_desc": "Providing a practical approach for countries with incomplete nutritional information to implement effective food health assessment systems.",
+        "input_variables": "🔢 Input Variables",
+        "sodium_label": "Sodium (mg/100g)",
+        "energy_label": "Energy (kJ/100g)",
+        "total_fat_label": "Total Fat (g/100g)",
+        "processed_label": "Is Ultra-Processed? (procef_4)",
+        "protein_label": "Protein (g/100g)",
+        "ifnurclaim_label": "Nutrition Claim (ifnurclaim)",
+        "predict_button": "🧮 Predict Healthiness",
+        "prediction_result": "🔍 Prediction Result",
+        "health_categories": {
+            0: {"name": "Grade E", "icon": "🔴", "color": "#dc3545", "description": "Very Unhealthy"},
+            1: {"name": "Grade D", "icon": "🟠", "color": "#fd7e14", "description": "Unhealthy"},
+            2: {"name": "Grade C", "icon": "🟡", "color": "#ffc107", "description": "Moderate"},
+            3: {"name": "Grade B", "icon": "🟢", "color": "#28a745", "description": "Healthy"},
+            4: {"name": "Grade A", "icon": "💚", "color": "#20c997", "description": "Very Healthy"}
+        },
+        "confidence": "Confidence",
+        "feature_importance": "📊 Feature Importance",
+        "shap_plot": "📊 SHAP Force Plot",
+        "base_value": "Base value",
+        "final_prediction": "Final prediction",
+        "expand_shap": "Click to view SHAP force plot",
+        "shap_success": "✅ SHAP force plot created (Matplotlib version)!",
+        "shap_html_success": "✅ SHAP force plot created (HTML version - Backup)!",
+        "shap_custom_success": "✅ SHAP force plot created (Custom version with feature names)!",
+        "shap_table": "📊 SHAP Values Table",
+        "shap_table_info": "💡 SHAP values displayed as table",
+        "positive_impact": "Positive Impact (Higher Health)",
+        "negative_impact": "Negative Impact (Lower Health)",
+        "warning_input": "⚠️ Please enter values for at least one feature before predicting.",
+        "input_tip": "💡 Tip: Please enter the nutritional information of the food, and the system will predict its healthiness across 5 grades (A-E).",
+        "model_error": "❌ Cannot proceed without model and scaler files",
+        "prediction_failed": "Prediction failed",
+        "shap_failed": "SHAP analysis failed",
+        "shap_unavailable": "💡 SHAP explanation is not available, but feature importance is shown above.",
+        "footer": "Developed using Streamlit and XGBoost · For research use only.",
+        "feature_names": ["Sodium", "Energy", "Total fat", "procef_4", "Protein", "ifnurclaim"],
+        "chart_feature_names": ["Sodium", "Energy", "Total fat", "procef_4", "Protein", "ifnurclaim"]
+    },
+    "zh": {
+        "title": "🍱 营养质量分类器",
+        "subtitle": "ML驱动的即食食品健康评估（五分类A-E等级）",
+        "description": "这个先进的机器学习应用程序使用XGBoost根据6个关键营养特征预测即食食品的营养健康性，分为5个健康等级（A-E）。",
+        "target_audience": "🎯 目标用户",
+        "audience_desc": "专为营养信息有限的国家和寻求快速、可靠食品健康评估的消费者设计。",
+        "problem_statement": "📊 问题陈述",
+        "problem_desc": "许多国家缺乏全面的营养标签系统，难以实施食品的概括性正面标签。",
+        "solution": "💡 我们的解决方案",
+        "solution_desc": "先进的ML模型分析6个关键营养特征，提供即时、准确的健康预测和详细解释，涵盖5个健康等级（A-E）。",
+        "mission": "🚀 使命",
+        "mission_desc": "为营养信息纰漏不全导致无法使用概括性正面标签的国家提供一个使用思路。",
+        "input_variables": "🔢 输入变量",
+        "sodium_label": "钠 (mg/100g)",
+        "energy_label": "能量 (kJ/100g)",
+        "total_fat_label": "总脂肪 (g/100g)",
+        "processed_label": "是否超加工？(procef_4)",
+        "protein_label": "蛋白质 (g/100g)",
+        "ifnurclaim_label": "营养声明 (ifnurclaim)",
+        "predict_button": "🧮 预测健康性",
+        "prediction_result": "🔍 预测结果",
+        "health_categories": {
+            0: {"name": "E级", "icon": "🔴", "color": "#dc3545", "description": "非常不健康"},
+            1: {"name": "D级", "icon": "🟠", "color": "#fd7e14", "description": "不健康"},
+            2: {"name": "C级", "icon": "🟡", "color": "#ffc107", "description": "中等"},
+            3: {"name": "B级", "icon": "🟢", "color": "#28a745", "description": "健康"},
+            4: {"name": "A级", "icon": "💚", "color": "#20c997", "description": "非常健康"}
+        },
+        "confidence": "置信度",
+        "feature_importance": "📊 特征重要性",
+        "shap_plot": "📊 SHAP力图",
+        "base_value": "基准值",
+        "final_prediction": "最终预测",
+        "expand_shap": "点击查看SHAP力图",
+        "shap_success": "✅ SHAP力图创建成功 (Matplotlib版本)!",
+        "shap_html_success": "✅ SHAP力图创建成功 (HTML版本 - 备用)!",
+        "shap_custom_success": "✅ SHAP力图创建成功 (自定义版本，包含特征名称)!",
+        "shap_table": "📊 SHAP值表格",
+        "shap_table_info": "💡 SHAP值以表格形式显示",
+        "positive_impact": "积极影响 (更高健康性)",
+        "negative_impact": "消极影响 (更低健康性)",
+        "warning_input": "⚠️ 请在预测前至少输入一个特征的值。",
+        "input_tip": "💡 提示: 请输入食品的营养成分信息，系统将预测其健康性（5个等级A-E）。",
+        "model_error": "❌ 没有模型和标准化器文件无法继续",
+        "prediction_failed": "预测失败",
+        "shap_failed": "SHAP分析失败",
+        "shap_unavailable": "💡 SHAP解释不可用，但上面显示了特征重要性。",
+        "footer": "使用Streamlit和XGBoost开发 · 仅供研究使用。",
+        "feature_names": ["钠", "能量", "总脂肪", "procef_4", "蛋白质", "ifnurclaim"],
+        "chart_feature_names": ["Sodium", "Energy", "Total fat", "procef_4", "Protein", "ifnurclaim"]
+    }
+}
+
+# ===== 页面设置 =====
+st.set_page_config(
+    page_title="Nutritional Quality Classifier (5-Class A-E)",
+    page_icon="🍱",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ===== 语言选择器 =====
+def get_language():
+    col1, col2, col3 = st.columns([1, 1, 6])
+    with col1:
+        lang_choice = st.selectbox("🌐 Language", list(LANGUAGES.keys()))
+    return TEXTS[LANGUAGES[lang_choice]]
+
+# 获取当前语言文本
+texts = get_language()
+
+# ===== 主标题区域 =====
+st.markdown(f"""
+<div style="text-align: center; padding: 2rem 0; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-bottom: 2rem;">
+    <h1 style="color: white; margin: 0; font-size: 2.5rem;">{texts['title']}</h1>
+    <p style="color: #f0f0f0; margin: 0.5rem 0 0 0; font-size: 1.2rem;">{texts['subtitle']}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ===== 应用描述 =====
+st.markdown(f"""
+<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #28a745; margin-bottom: 2rem;">
+    <p style="margin: 0; font-size: 1.1rem; line-height: 1.6;">{texts['description']}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ===== 信息卡片 =====
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown(f"""
+    <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h4 style="color: #1976d2; margin: 0 0 0.5rem 0;">{texts['target_audience']}</h4>
+        <p style="margin: 0; font-size: 0.9rem;">{texts['audience_desc']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div style="background: #f3e5f5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h4 style="color: #7b1fa2; margin: 0 0 0.5rem 0;">{texts['problem_statement']}</h4>
+        <p style="margin: 0; font-size: 0.9rem;">{texts['problem_desc']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+col3, col4 = st.columns(2)
+
+with col3:
+    st.markdown(f"""
+    <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h4 style="color: #2e7d32; margin: 0 0 0.5rem 0;">{texts['solution']}</h4>
+        <p style="margin: 0; font-size: 0.9rem;">{texts['solution_desc']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown(f"""
+    <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h4 style="color: #f57c00; margin: 0 0 0.5rem 0;">{texts['mission']}</h4>
+        <p style="margin: 0; font-size: 0.9rem;">{texts['mission_desc']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ===== 加载模型 =====
 @st.cache_resource
 def load_model():
     try:
-        return joblib.load("XGBoost_final_model_selected_9.pkl")
-    except FileNotFoundError:
-        st.error("❌ Model file not found. Please upload 'XGBoost_final_model_selected_9.pkl'.")
-        st.stop()
+        return joblib.load("XGBoost_retrained_model.pkl")
+    except Exception as e:
+        st.error(f"Model loading failed: {e}")
+        return None
 
 @st.cache_resource
 def load_scaler():
     try:
         return joblib.load("scaler2.pkl")
-    except FileNotFoundError:
-        st.error("❌ Scaler file not found. Please upload 'scaler2.pkl'.")
-        st.stop()
-
-@st.cache_resource
-def load_background_data():
-    try:
-        return np.load("background_data.npy")
-    except FileNotFoundError:
-        st.error("❌ Background data not found. Please upload 'background_data.npy'.")
-        st.stop()
+    except Exception as e:
+        st.error(f"Scaler loading failed: {e}")
+        return None
 
 model = load_model()
 scaler = load_scaler()
-background_data = load_background_data()
-explainer = shap.Explainer(model, background_data)
 
-# ===== Nutri-Score 风格图像绘制函数 =====
-def draw_nutriscore_final(predicted_label):
-    labels = ['A', 'B', 'C', 'D', 'E']
-    colors = ['#00843D', '#A8C92D', '#FECB00', '#EF7D00', '#E60012']
-    fig, ax = plt.subplots(figsize=(6.5, 2.5))
+if model is None or scaler is None:
+    st.error(texts['model_error'])
+    st.stop()
 
-    background = patches.FancyBboxPatch((0, 0), 5, 1.2,
-        boxstyle="round,pad=0.1,rounding_size=0.1",
-        edgecolor='gray', facecolor='white', linewidth=2)
-    ax.add_patch(background)
+# ===== 侧边栏输入 =====
+st.sidebar.markdown(f"## {texts['input_variables']}")
 
-    for i, (label, color) in enumerate(zip(labels, colors)):
-        rect = patches.FancyBboxPatch((i, 0), 1, 1,
-            boxstyle="round,pad=0.02,rounding_size=0.05",
-            facecolor=color, edgecolor='white', linewidth=0.5)
-        ax.add_patch(rect)
+# 添加输入说明
+st.sidebar.markdown(f"""
+<div style="background: #f0f8ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+    <p style="margin: 0; font-size: 0.9rem; color: #1976d2;">
+        <strong>{texts['input_tip']}</strong>
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
-        if label == predicted_label.upper():
-            circle = patches.Circle((i + 0.5, 0.5), radius=0.55,
-                facecolor='white', alpha=0.25, edgecolor=None, zorder=2)
-            ax.add_patch(circle)
-            ax.text(i + 0.5, 0.5, label,
-                ha='center', va='center', fontsize=36,
-                weight='bold', color='white', zorder=3)
-        else:
-            ax.text(i + 0.5, 0.5, label,
-                ha='center', va='center', fontsize=26,
-                weight='bold', color='white', alpha=0.3, zorder=2)
+# 6个输入特征，按照指定顺序
+sodium = st.sidebar.number_input(texts['sodium_label'], min_value=0.0, step=1.0, help="每100g食品中的钠含量")
+energy = st.sidebar.number_input(texts['energy_label'], min_value=0.0, step=1.0, help="每100g食品中的能量含量")
+total_fat = st.sidebar.number_input(texts['total_fat_label'], min_value=0.0, step=0.1, help="每100g食品中的总脂肪含量")
+procef_4 = st.sidebar.selectbox(texts['processed_label'], [0, 1], help="0=非超加工, 1=超加工")
+protein = st.sidebar.number_input(texts['protein_label'], min_value=0.0, step=0.1, help="每100g食品中的蛋白质含量")
+ifnurclaim = st.sidebar.selectbox(texts['ifnurclaim_label'], [0, 1], help="0=无营养声明, 1=有营养声明")
 
-    ax.text(2.5, 1.15, 'PREDICTED HEALTHINESS',
-        ha='center', va='bottom', fontsize=14,
-        weight='bold', color='black')
-    ax.set_xlim(0, 5)
-    ax.set_ylim(0, 1.4)
-    ax.axis('off')
-    plt.tight_layout()
-    return fig
-
-# ===== 输入栏 =====
-st.sidebar.header("🔢 Input Variables")
-protein = st.sidebar.number_input("Protein (g/100g)", min_value=0.0, step=0.1)
-sodium = st.sidebar.number_input("Sodium (mg/100g)", min_value=0.0, step=1.0)
-energy = st.sidebar.number_input("Energy (kJ/100g)", min_value=0.0, step=1.0)
-total_fat = st.sidebar.number_input("Total Fat (g/100g)", min_value=0.0, step=0.1)
-weight = st.sidebar.number_input("Weight (g)", min_value=0.0, step=1.0)
-procef_4 = st.sidebar.selectbox("Ultra-Processed? (procef_4)", [0, 1])
-ifclaim = st.sidebar.selectbox("Any Claim Present? (ifclaim)", [0, 1])
-ifnurclaim = st.sidebar.selectbox("Nutrition Claim Present? (ifnurclaim)", [0, 1])
-nutclaim3 = st.sidebar.selectbox("Specific Nutrient Claim (nutclaim3)", [0, 1])
-
-# ===== 预测逻辑 =====
-if st.sidebar.button("🧮 Predict"):
-    scaled_columns = ['Sodium', 'Protein', 'Energy', 'Total fat', 'weight',
-                      'ifclaim', 'ifnurclaim', 'nutclaim3']
-    final_columns = scaled_columns + ['procef_4']
-
-    input_dict = {
-        "Sodium": sodium,
-        "Protein": protein,
-        "Energy": energy,
-        "Total fat": total_fat,
-        "weight": weight,
-        "ifclaim": ifclaim,
-        "ifnurclaim": ifnurclaim,
-        "nutclaim3": nutclaim3
-    }
-
-    user_input_for_scaler = pd.DataFrame([[input_dict[feat] for feat in scaled_columns]], columns=scaled_columns)
-    user_scaled_part = scaler.transform(user_input_for_scaler)
-    user_scaled_df = pd.DataFrame(user_scaled_part, columns=scaled_columns)
-
-    user_scaled_df["procef_4"] = procef_4
-    user_scaled_df = user_scaled_df[final_columns]
-
-    prediction = model.predict(user_scaled_df)[0]
-    prob_array = model.predict_proba(user_scaled_df)[0]
-    label_map = {0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A'}
-    predicted_label = label_map.get(prediction, f"Class {prediction}")
-
-    st.subheader("🔍 Prediction Result")
-    st.markdown(f"**Prediction:** `{predicted_label}`")
-    st.pyplot(draw_nutriscore_final(predicted_label))
-
-    st.subheader("📊 Probability Table")
-    prob_df = pd.DataFrame({
-        "HSR Class": [label_map[i] for i in range(len(prob_array))],
-        "Probability": [f"{p:.2f}" for p in prob_array]
-    })
-    st.dataframe(prob_df, use_container_width=True)
-
-    st.subheader("📈 SHAP Force Plot (All Classes)")
-    shap_values = explainer(user_scaled_df)  # shape: [samples, features, classes]
-
-    label_map = {0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A'}
-    sample_index = 0
-
-    for class_index in range(shap_values.values.shape[2]):
-        with st.expander(f"🔍 SHAP for Class {label_map[class_index]}"):
-            force_plot_html = shap.plots.force(
-                base_value=explainer.expected_value[class_index],
-                shap_values=shap_values.values[sample_index, :, class_index],
-                features=user_scaled_df.iloc[sample_index],
-                matplotlib=False,
-                show=False
-            )
-            components.html(shap.getjs() + force_plot_html.html(), height=400)
-
+# 添加预测按钮样式
+if st.sidebar.button(texts['predict_button'], type="primary", use_container_width=True):
+    # 检查输入是否为零
+    if sodium == 0 and energy == 0 and total_fat == 0 and protein == 0:
+        st.warning(texts['warning_input'])
+        st.stop()
+    
+    try:
+        # 1. 准备输入数据 - 按照指定顺序
+        input_data = np.array([[sodium, energy, total_fat, procef_4, protein, ifnurclaim]], dtype=float)
+        input_scaled = scaler.transform(input_data)
+        user_scaled_df = pd.DataFrame(input_scaled, columns=texts['chart_feature_names'])
+        
+        # 2. 预测
+        prediction = model.predict(user_scaled_df)[0]
+        probabilities = model.predict_proba(user_scaled_df)[0]
+        
+        # 3. 展示结果 - 美化
+        st.markdown(f"## {texts['prediction_result']}")
+        
+        # 获取预测类别的信息
+        category_info = texts['health_categories'][prediction]
+        confidence = probabilities[prediction]
+        
+        # 结果卡片
+        st.markdown(f"""
+        <div style="background: {category_info['color']}; color: white; padding: 2rem; border-radius: 10px; text-align: center; margin: 1rem 0;">
+            <h2 style="margin: 0; font-size: 2.5rem;">{category_info['icon']} {category_info['name']}</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">{category_info['description']}</p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.2rem;">{texts['confidence']}: <strong>{confidence:.2f}</strong></p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 显示所有类别的概率
+        st.markdown("### 📊 Prediction Probabilities (A-E Grades)")
+        prob_cols = st.columns(5)
+        for i, (col, (cat_id, cat_info)) in enumerate(zip(prob_cols, texts['health_categories'].items())):
+            with col:
+                prob_value = probabilities[cat_id]
+                delta_value = f"{prob_value-0.2:.3f}" if prob_value > 0.2 else None
+                st.metric(
+                    f"{cat_info['icon']} {cat_info['name']}", 
+                    f"{prob_value:.3f}",
+                    delta=delta_value
+                )
+        
+        # 4. 特征重要性
+        st.markdown(f"## {texts['feature_importance']}")
+        
+        if hasattr(model, 'steps'):
+            final_model = model.steps[-1][1]
+            if hasattr(final_model, 'feature_importances_'):
+                feature_importance = final_model.feature_importances_
+                features = texts['chart_feature_names']
+                
+                fig, ax = plt.subplots(figsize=(12, 8))
+                bars = ax.barh(features, feature_importance, color=['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'])
+                ax.set_xlabel('Importance', fontsize=12)
+                ax.set_title('Feature Importance Analysis', fontsize=14, fontweight='bold')
+                
+                for i, bar in enumerate(bars):
+                    width = bar.get_width()
+                    ax.text(width, bar.get_y() + bar.get_height()/2, 
+                            f'{width:.3f}', ha='left', va='center', fontweight='bold')
+                
+                plt.tight_layout()
+                st.pyplot(fig)
+                plt.close()
+        
+        # 5. SHAP力图
+        st.markdown(f"## {texts['shap_plot']}")
+        
+        try:
+            # 创建背景数据
+            np.random.seed(42)
+            background_data = np.random.normal(0, 1, (100, 6)).astype(float)
+            
+            # 使用 Explainer
+            explainer = shap.Explainer(model.predict_proba, background_data)
+            shap_values = explainer(user_scaled_df)
+            
+            # 计算期望值
+            background_predictions = model.predict_proba(background_data)
+            expected_value = background_predictions.mean(axis=0)
+            
+            # 获取 SHAP 值 - 对于多分类，我们需要选择预测类别的SHAP值
+            if hasattr(shap_values, 'values'):
+                if len(shap_values.values.shape) == 3:
+                    shap_vals = shap_values.values[0, :, prediction]  # 选择预测类别的SHAP值
+                    base_val = expected_value[prediction]
+                else:
+                    shap_vals = shap_values.values[0, :]
+                    base_val = expected_value[0]
+            else:
+                shap_vals = shap_values[0, :]
+                base_val = expected_value[0]
+            
+            # 显示 SHAP 值信息
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric(texts['base_value'], f"{base_val:.4f}")
+            with col2:
+                st.metric(texts['final_prediction'], f"{base_val + shap_vals.sum():.4f}")
+            
+            # 创建 SHAP 力图
+            with st.expander(texts['expand_shap'], expanded=True):
+                # 方法1：优先使用matplotlib版本
+                try:
+                    plt.figure(figsize=(20, 8))
+                    
+                    shap.force_plot(base_val, shap_vals,
+                                   user_scaled_df.iloc[0], 
+                                   feature_names=texts['chart_feature_names'],
+                                   matplotlib=True, show=False)
+                    
+                    plt.title(f'SHAP Force Plot - {category_info["name"]} ({category_info["description"]}) Prediction', fontsize=16, fontweight='bold', pad=30)
+                    plt.tight_layout()
+                    st.pyplot(plt)
+                    plt.close()
+                    st.success(texts['shap_success'])
+                    
+                except Exception as e:
+                    st.warning(f"Matplotlib version failed: {e}")
+                    
+                    # 方法2：使用 HTML 版本作为备用
+                    try:
+                        force_plot = shap.force_plot(
+                            base_val,
+                            shap_vals,
+                            user_scaled_df.iloc[0],
+                            feature_names=texts['chart_feature_names'],
+                            matplotlib=False
+                        )
+                        
+                        force_html = force_plot.html()
+                        components.html(shap.getjs() + force_html, height=400)
+                        st.success(texts['shap_html_success'])
+                        
+                    except Exception as e2:
+                        st.warning(f"HTML version also failed: {e2}")
+                        
+                        # 方法3：自定义清晰的条形图
+                        try:
+                            fig, ax = plt.subplots(figsize=(15, 8))
+                            
+                            features = texts['chart_feature_names']
+                            feature_values = user_scaled_df.iloc[0].values
+                            
+                            colors = ['#ff6b6b' if x < 0 else '#4ecdc4' for x in shap_vals]
+                            bars = ax.barh(features, shap_vals, color=colors, alpha=0.8, height=0.6)
+                            
+                            for i, (bar, shap_val, feature_val, feature_name) in enumerate(zip(bars, shap_vals, feature_values, features)):
+                                width = bar.get_width()
+                                y_pos = bar.get_y() + bar.get_height()/2
+                                
+                                ax.text(width/2, y_pos, f'{shap_val:.3f}', 
+                                       ha='center', va='center', color='white', fontweight='bold', fontsize=12)
+                                
+                                if width > 0:
+                                    ax.text(width + 0.05, y_pos, f'{feature_name}: {feature_val:.2f}', 
+                                           ha='left', va='center', fontsize=11, fontweight='bold',
+                                           bbox=dict(boxstyle="round,pad=0.4", facecolor="lightblue", alpha=0.8))
+                                else:
+                                    ax.text(width - 0.05, y_pos, f'{feature_name}: {feature_val:.2f}', 
+                                           ha='right', va='center', fontsize=11, fontweight='bold',
+                                           bbox=dict(boxstyle="round,pad=0.4", facecolor="lightcoral", alpha=0.8))
+                            
+                            ax.axvline(x=0, color='black', linestyle='-', alpha=0.5, linewidth=2)
+                            ax.set_xlabel('SHAP Value', fontsize=12)
+                            ax.set_ylabel('Features', fontsize=12)
+                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} ({category_info["description"]}) Prediction', fontsize=14, pad=20)
+                            ax.grid(True, alpha=0.3)
+                            
+                            legend_elements = [
+                                plt.Rectangle((0,0),1,1, facecolor='#4ecdc4', alpha=0.8, label=texts['positive_impact']),
+                                plt.Rectangle((0,0),1,1, facecolor='#ff6b6b', alpha=0.8, label=texts['negative_impact'])
+                            ]
+                            ax.legend(handles=legend_elements, loc='upper right', fontsize=10)
+                            
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                            plt.close()
+                            st.success(texts['shap_custom_success'])
+                            
+                        except Exception as e3:
+                            st.error(f"All SHAP plots failed: {e3}")
+                            
+                            # 方法4：显示详细表格
+                            st.markdown(f"### {texts['shap_table']}")
+                            shap_df = pd.DataFrame({
+                                'Feature': features,
+                                'Feature Value': feature_values,
+                                'SHAP Value': shap_vals,
+                                'Impact': [texts['negative_impact'] if x < 0 else texts['positive_impact'] for x in shap_vals]
+                            })
+                            st.dataframe(shap_df, use_container_width=True)
+                            st.info(texts['shap_table_info'])
+            
+        except Exception as e:
+            st.error(f"{texts['shap_failed']}: {e}")
+            st.info(texts['shap_unavailable'])
+            
+    except Exception as e:
+        st.error(f"{texts['prediction_failed']}: {e}")
 
 # ===== 页脚 =====
 st.markdown("---")
-st.markdown("Developed using Streamlit and XGBoost · For research use only.")
+st.markdown(f"""
+<div style="text-align: center; padding: 2rem 0; color: #666;">
+    <p style="margin: 0;">{texts['footer']}</p>
+</div>
+""", unsafe_allow_html=True)
