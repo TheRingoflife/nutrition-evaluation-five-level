@@ -63,6 +63,7 @@ TEXTS = {
         "shap_custom_success": "✅ SHAP force plot created (Custom version with feature names)!",
         "shap_table": "📊 SHAP Values Table",
         "shap_table_info": "💡 SHAP values displayed as table",
+        "prediction_probabilities": "Prediction Probabilities",
         "positive_impact": "Positive Impact (Higher Health)",
         "negative_impact": "Negative Impact (Lower Health)",
         "warning_input": "⚠️ Please enter values for at least one feature before predicting.",
@@ -114,6 +115,7 @@ TEXTS = {
         "shap_custom_success": "✅ SHAP力图创建成功 (自定义版本，包含特征名称)!",
         "shap_table": "📊 SHAP值表格",
         "shap_table_info": "💡 SHAP值以表格形式显示",
+        "prediction_probabilities": "预测概率",
         "positive_impact": "积极影响 (更高健康性)",
         "negative_impact": "消极影响 (更低健康性)",
         "warning_input": "⚠️ 请在预测前至少输入一个特征的值。",
@@ -234,16 +236,22 @@ st.sidebar.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# 6个输入特征，按照指定顺序
-sodium = st.sidebar.number_input(texts['sodium_label'], min_value=0.0, step=1.0, help="每100g食品中的钠含量")
-energy = st.sidebar.number_input(texts['energy_label'], min_value=0.0, step=1.0, help="每100g食品中的能量含量")
-total_fat = st.sidebar.number_input(texts['total_fat_label'], min_value=0.0, step=0.1, help="每100g食品中的总脂肪含量")
+# 6个输入特征，按照指定顺序，默认为空
+sodium = st.sidebar.number_input(texts['sodium_label'], min_value=0.0, step=1.0, value=None, help="每100g食品中的钠含量")
+energy = st.sidebar.number_input(texts['energy_label'], min_value=0.0, step=1.0, value=None, help="每100g食品中的能量含量")
+total_fat = st.sidebar.number_input(texts['total_fat_label'], min_value=0.0, step=0.1, value=None, help="每100g食品中的总脂肪含量")
 procef_4 = st.sidebar.selectbox(texts['processed_label'], [0, 1], help="0=非超加工, 1=超加工")
-protein = st.sidebar.number_input(texts['protein_label'], min_value=0.0, step=0.1, help="每100g食品中的蛋白质含量")
+protein = st.sidebar.number_input(texts['protein_label'], min_value=0.0, step=0.1, value=None, help="每100g食品中的蛋白质含量")
 ifnurclaim = st.sidebar.selectbox(texts['ifnurclaim_label'], [0, 1], help="0=无营养声明, 1=有营养声明")
 
 # 添加预测按钮样式
 if st.sidebar.button(texts['predict_button'], type="primary", use_container_width=True):
+    # 将None值转换为0进行处理
+    sodium = sodium if sodium is not None else 0.0
+    energy = energy if energy is not None else 0.0
+    total_fat = total_fat if total_fat is not None else 0.0
+    protein = protein if protein is not None else 0.0
+    
     # 检查输入是否为零
     if sodium == 0 and energy == 0 and total_fat == 0 and protein == 0:
         st.warning(texts['warning_input'])
@@ -275,8 +283,8 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
         </div>
         """, unsafe_allow_html=True)
         
-        # 显示所有类别的概率
-        st.markdown("### 📊 Prediction Probabilities (A-E Grades)")
+        # 显示所有类别的概率 - 使用多语言支持
+        st.markdown(f"### 📊 {texts['prediction_probabilities']} (A-E Grades)")
         prob_cols = st.columns(5)
         for i, (col, (cat_id, cat_info)) in enumerate(zip(prob_cols, texts['health_categories'].items())):
             with col:
@@ -398,9 +406,9 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                         try:
                             # 按SHAP值从大到小排序
                             sorted_indices = np.argsort(np.abs(shap_vals))[::-1]
-                            sorted_features = [features[i] for i in sorted_indices]
+                            sorted_features = [texts['chart_feature_names'][i] for i in sorted_indices]
                             sorted_shap_vals = shap_vals[sorted_indices]
-                            sorted_feature_values = feature_values[sorted_indices]
+                            sorted_feature_values = [custom_df.iloc[0, i] for i in sorted_indices]
                             
                             fig, ax = plt.subplots(figsize=(16, 10))
                             
