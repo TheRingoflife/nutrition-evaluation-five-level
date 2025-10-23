@@ -357,7 +357,8 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                                    feature_names=texts['chart_feature_names'],
                                    matplotlib=True, show=False)
                     
-                    plt.title(f'SHAP Force Plot - {category_info["name"]} ({category_info["description"]}) Prediction', fontsize=16, fontweight='bold', pad=30)
+                    # 修改标题为纯英文，移除description部分
+                    plt.title(f'SHAP Force Plot - {category_info["name"]} Prediction', fontsize=16, fontweight='bold', pad=30)
                     plt.tight_layout()
                     st.pyplot(plt)
                     plt.close()
@@ -412,7 +413,8 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                             ax.axvline(x=0, color='black', linestyle='-', alpha=0.5, linewidth=2)
                             ax.set_xlabel('SHAP Value', fontsize=12)
                             ax.set_ylabel('Features', fontsize=12)
-                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} ({category_info["description"]}) Prediction', fontsize=14, pad=20)
+                            # 修改标题为纯英文，移除description部分
+                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} Prediction', fontsize=14, pad=20)
                             ax.grid(True, alpha=0.3)
                             
                             legend_elements = [
