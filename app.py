@@ -384,46 +384,64 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                     except Exception as e2:
                         st.warning(f"HTML version also failed: {e2}")
                         
-                        # 方法3：自定义清晰的条形图
+                        # 方法3：自定义清晰的条形图（优化版本，避免重叠）
                         try:
-                            fig, ax = plt.subplots(figsize=(15, 8))
+                            fig, ax = plt.subplots(figsize=(18, 10))  # 增加图形尺寸
                             
                             features = texts['chart_feature_names']
                             feature_values = user_scaled_df.iloc[0].values
                             
                             colors = ['#ff6b6b' if x < 0 else '#4ecdc4' for x in shap_vals]
-                            bars = ax.barh(features, shap_vals, color=colors, alpha=0.8, height=0.6)
+                            bars = ax.barh(features, shap_vals, color=colors, alpha=0.8, height=0.7)  # 增加条形高度
                             
+                            # 优化标签显示，避免重叠
                             for i, (bar, shap_val, feature_val, feature_name) in enumerate(zip(bars, shap_vals, feature_values, features)):
                                 width = bar.get_width()
                                 y_pos = bar.get_y() + bar.get_height()/2
                                 
+                                # 在条形图内部显示SHAP值
                                 ax.text(width/2, y_pos, f'{shap_val:.3f}', 
-                                       ha='center', va='center', color='white', fontweight='bold', fontsize=12)
+                                       ha='center', va='center', color='white', fontweight='bold', fontsize=11)
                                 
+                                # 在条形图外部显示特征名称和值，使用更好的布局
                                 if width > 0:
-                                    ax.text(width + 0.05, y_pos, f'{feature_name}: {feature_val:.2f}', 
-                                           ha='left', va='center', fontsize=11, fontweight='bold',
-                                           bbox=dict(boxstyle="round,pad=0.4", facecolor="lightblue", alpha=0.8))
+                                    # 右侧显示
+                                    ax.text(width + 0.1, y_pos, f'{feature_name}', 
+                                           ha='left', va='center', fontsize=12, fontweight='bold',
+                                           bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.8))
+                                    ax.text(width + 0.1, y_pos - 0.15, f'Value: {feature_val:.2f}', 
+                                           ha='left', va='center', fontsize=10, style='italic',
+                                           bbox=dict(boxstyle="round,pad=0.2", facecolor="lightcyan", alpha=0.6))
                                 else:
-                                    ax.text(width - 0.05, y_pos, f'{feature_name}: {feature_val:.2f}', 
-                                           ha='right', va='center', fontsize=11, fontweight='bold',
-                                           bbox=dict(boxstyle="round,pad=0.4", facecolor="lightcoral", alpha=0.8))
+                                    # 左侧显示
+                                    ax.text(width - 0.1, y_pos, f'{feature_name}', 
+                                           ha='right', va='center', fontsize=12, fontweight='bold',
+                                           bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral", alpha=0.8))
+                                    ax.text(width - 0.1, y_pos - 0.15, f'Value: {feature_val:.2f}', 
+                                           ha='right', va='center', fontsize=10, style='italic',
+                                           bbox=dict(boxstyle="round,pad=0.2", facecolor="mistyrose", alpha=0.6))
                             
+                            # 添加零线
                             ax.axvline(x=0, color='black', linestyle='-', alpha=0.5, linewidth=2)
-                            ax.set_xlabel('SHAP Value', fontsize=12)
-                            ax.set_ylabel('Features', fontsize=12)
-                            # 修改标题为纯英文，移除description部分
-                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} Prediction', fontsize=14, pad=20)
+                            ax.set_xlabel('SHAP Value', fontsize=14, fontweight='bold')
+                            ax.set_ylabel('Features', fontsize=14, fontweight='bold')
+                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} Prediction', fontsize=16, fontweight='bold', pad=20)
                             ax.grid(True, alpha=0.3)
                             
+                            # 调整y轴标签间距
+                            ax.set_yticks(range(len(features)))
+                            ax.set_yticklabels(features, fontsize=12)
+                            
+                            # 添加图例
                             legend_elements = [
                                 plt.Rectangle((0,0),1,1, facecolor='#4ecdc4', alpha=0.8, label=texts['positive_impact']),
                                 plt.Rectangle((0,0),1,1, facecolor='#ff6b6b', alpha=0.8, label=texts['negative_impact'])
                             ]
-                            ax.legend(handles=legend_elements, loc='upper right', fontsize=10)
+                            ax.legend(handles=legend_elements, loc='upper right', fontsize=11)
                             
+                            # 调整布局，确保标签不被截断
                             plt.tight_layout()
+                            plt.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1)
                             st.pyplot(fig)
                             plt.close()
                             st.success(texts['shap_custom_success'])
