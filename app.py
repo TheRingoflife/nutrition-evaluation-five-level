@@ -384,18 +384,21 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                     except Exception as e2:
                         st.warning(f"HTML version also failed: {e2}")
                         
-                        # 方法3：自定义清晰的条形图（优化版本，避免重叠）
+                        # 方法3：自定义清晰的条形图（优化版本，按SHAP值排序，特征值保留两位小数）
                         try:
-                            fig, ax = plt.subplots(figsize=(18, 10))  # 增加图形尺寸
+                            # 按SHAP值从大到小排序
+                            sorted_indices = np.argsort(np.abs(shap_vals))[::-1]
+                            sorted_features = [features[i] for i in sorted_indices]
+                            sorted_shap_vals = shap_vals[sorted_indices]
+                            sorted_feature_values = feature_values[sorted_indices]
                             
-                            features = texts['chart_feature_names']
-                            feature_values = user_scaled_df.iloc[0].values
+                            fig, ax = plt.subplots(figsize=(16, 10))
                             
-                            colors = ['#ff6b6b' if x < 0 else '#4ecdc4' for x in shap_vals]
-                            bars = ax.barh(features, shap_vals, color=colors, alpha=0.8, height=0.7)  # 增加条形高度
+                            colors = ['#ff6b6b' if x < 0 else '#4ecdc4' for x in sorted_shap_vals]
+                            bars = ax.barh(sorted_features, sorted_shap_vals, color=colors, alpha=0.8, height=0.6)
                             
                             # 优化标签显示，避免重叠
-                            for i, (bar, shap_val, feature_val, feature_name) in enumerate(zip(bars, shap_vals, feature_values, features)):
+                            for i, (bar, shap_val, feature_val, feature_name) in enumerate(zip(bars, sorted_shap_vals, sorted_feature_values, sorted_features)):
                                 width = bar.get_width()
                                 y_pos = bar.get_y() + bar.get_height()/2
                                 
@@ -409,7 +412,7 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                                     ax.text(width + 0.1, y_pos, f'{feature_name}', 
                                            ha='left', va='center', fontsize=12, fontweight='bold',
                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.8))
-                                    ax.text(width + 0.1, y_pos - 0.15, f'Value: {feature_val:.2f}', 
+                                    ax.text(width + 0.1, y_pos - 0.15, f'Val: {feature_val:.2f}', 
                                            ha='left', va='center', fontsize=10, style='italic',
                                            bbox=dict(boxstyle="round,pad=0.2", facecolor="lightcyan", alpha=0.6))
                                 else:
@@ -417,7 +420,7 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                                     ax.text(width - 0.1, y_pos, f'{feature_name}', 
                                            ha='right', va='center', fontsize=12, fontweight='bold',
                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral", alpha=0.8))
-                                    ax.text(width - 0.1, y_pos - 0.15, f'Value: {feature_val:.2f}', 
+                                    ax.text(width - 0.1, y_pos - 0.15, f'Val: {feature_val:.2f}', 
                                            ha='right', va='center', fontsize=10, style='italic',
                                            bbox=dict(boxstyle="round,pad=0.2", facecolor="mistyrose", alpha=0.6))
                             
@@ -425,12 +428,8 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                             ax.axvline(x=0, color='black', linestyle='-', alpha=0.5, linewidth=2)
                             ax.set_xlabel('SHAP Value', fontsize=14, fontweight='bold')
                             ax.set_ylabel('Features', fontsize=14, fontweight='bold')
-                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} Prediction', fontsize=16, fontweight='bold', pad=20)
+                            ax.set_title(f'SHAP Force Plot - {category_info["name"]} Prediction (Sorted by Impact)', fontsize=16, fontweight='bold', pad=20)
                             ax.grid(True, alpha=0.3)
-                            
-                            # 调整y轴标签间距
-                            ax.set_yticks(range(len(features)))
-                            ax.set_yticklabels(features, fontsize=12)
                             
                             # 添加图例
                             legend_elements = [
@@ -452,10 +451,10 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                             # 方法4：显示详细表格
                             st.markdown(f"### {texts['shap_table']}")
                             shap_df = pd.DataFrame({
-                                'Feature': features,
-                                'Feature Value': feature_values,
-                                'SHAP Value': shap_vals,
-                                'Impact': [texts['negative_impact'] if x < 0 else texts['positive_impact'] for x in shap_vals]
+                                'Feature': sorted_features,
+                                'Feature Value': sorted_feature_values,
+                                'SHAP Value': sorted_shap_vals,
+                                'Impact': [texts['negative_impact'] if x < 0 else texts['positive_impact'] for x in sorted_shap_vals]
                             })
                             st.dataframe(shap_df, use_container_width=True)
                             st.info(texts['shap_table_info'])
