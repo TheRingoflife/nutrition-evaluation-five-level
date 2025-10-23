@@ -352,8 +352,13 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                 try:
                     plt.figure(figsize=(20, 8))
                     
+                    # 创建自定义的DataFrame，特征值保留两位小数
+                    custom_df = user_scaled_df.copy()
+                    for col in custom_df.columns:
+                        custom_df[col] = custom_df[col].round(2)
+                    
                     shap.force_plot(base_val, shap_vals,
-                                   user_scaled_df.iloc[0], 
+                                   custom_df.iloc[0], 
                                    feature_names=texts['chart_feature_names'],
                                    matplotlib=True, show=False)
                     
@@ -369,10 +374,15 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                     
                     # 方法2：使用 HTML 版本作为备用
                     try:
+                        # 创建自定义的DataFrame，特征值保留两位小数
+                        custom_df = user_scaled_df.copy()
+                        for col in custom_df.columns:
+                            custom_df[col] = custom_df[col].round(2)
+                        
                         force_plot = shap.force_plot(
                             base_val,
                             shap_vals,
-                            user_scaled_df.iloc[0],
+                            custom_df.iloc[0],
                             feature_names=texts['chart_feature_names'],
                             matplotlib=False
                         )
@@ -452,8 +462,8 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                             st.markdown(f"### {texts['shap_table']}")
                             shap_df = pd.DataFrame({
                                 'Feature': sorted_features,
-                                'Feature Value': sorted_feature_values,
-                                'SHAP Value': sorted_shap_vals,
+                                'Feature Value': [f"{val:.2f}" for val in sorted_feature_values],
+                                'SHAP Value': [f"{val:.3f}" for val in sorted_shap_vals],
                                 'Impact': [texts['negative_impact'] if x < 0 else texts['positive_impact'] for x in sorted_shap_vals]
                             })
                             st.dataframe(shap_df, use_container_width=True)
