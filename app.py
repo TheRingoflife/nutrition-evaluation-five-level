@@ -357,7 +357,7 @@ if st.sidebar.button(texts['predict_button'], type="primary", use_container_widt
                                    feature_names=texts['chart_feature_names'],
                                    matplotlib=True, show=False)
                     
-                    plt.title(f'SHAP Force Plot - {category_info["name"]} Prediction', fontsize=16, fontweight='bold', pad=30)
+                    plt.title(f'SHAP Force Plot - {category_info["name"]}, fontsize=16, fontweight='bold', pad=30)
                     plt.tight_layout()
                     st.pyplot(plt)
                     plt.close()
