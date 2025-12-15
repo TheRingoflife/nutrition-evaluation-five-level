@@ -43,6 +43,12 @@ TEXTS = {
         "processed_label": "Is Ultra-Processed? (procef_4)",
         "protein_label": "Protein (g/100g)",
         "ifnurclaim_label": "Nutrition Claim (ifnurclaim)",
+        "help_sodium": "Sodium content per 100g of food",
+        "help_energy": "Energy content per 100g of food",
+        "help_total_fat": "Total fat content per 100g of food",
+        "help_procef_4": "0=Not ultra-processed, 1=Ultra-processed",
+        "help_protein": "Protein content per 100g of food",
+        "help_ifnurclaim": "0=No nutrition claim, 1=Has nutrition claim"
         "predict_button": "🧮 Predict Healthiness",
         "prediction_result": "🔍 Prediction Result",
         "health_categories": {
@@ -95,6 +101,12 @@ TEXTS = {
         "processed_label": "是否超加工？(procef_4)",
         "protein_label": "蛋白质 (g/100g)",
         "ifnurclaim_label": "营养声明 (ifnurclaim)",
+        "help_sodium": "每100g食品中的钠含量",
+        "help_energy": "每100g食品中的能量含量",
+        "help_total_fat": "每100g食品中的总脂肪含量",
+        "help_procef_4": "0=非超加工, 1=超加工",
+        "help_protein": "每100g食品中的蛋白质含量",
+        "help_ifnurclaim": "0=无营养声明, 1=有营养声明",
         "predict_button": "🧮 预测健康性",
         "prediction_result": "🔍 预测结果",
         "health_categories": {
@@ -237,12 +249,12 @@ st.sidebar.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 6个输入特征，按照指定顺序，默认为空
-sodium = st.sidebar.number_input(texts['sodium_label'], min_value=0.0, step=1.0, value=None, help="每100g食品中的钠含量")
-energy = st.sidebar.number_input(texts['energy_label'], min_value=0.0, step=1.0, value=None, help="每100g食品中的能量含量")
-total_fat = st.sidebar.number_input(texts['total_fat_label'], min_value=0.0, step=0.1, value=None, help="每100g食品中的总脂肪含量")
-procef_4 = st.sidebar.selectbox(texts['processed_label'], [0, 1], help="0=非超加工, 1=超加工")
-protein = st.sidebar.number_input(texts['protein_label'], min_value=0.0, step=0.1, value=None, help="每100g食品中的蛋白质含量")
-ifnurclaim = st.sidebar.selectbox(texts['ifnurclaim_label'], [0, 1], help="0=无营养声明, 1=有营养声明")
+sodium = st.sidebar.number_input(texts['sodium_label'], min_value=0.0, step=1.0, value=None, help=texts['help_sodium'])
+energy = st.sidebar.number_input(texts['energy_label'], min_value=0.0, step=1.0, value=None, help=texts['help_energy'])
+total_fat = st.sidebar.number_input(texts['total_fat_label'], min_value=0.0, step=0.1, value=None, help=texts['help_total_fat'])
+procef_4 = st.sidebar.selectbox(texts['processed_label'], [0, 1], help=texts['help_procef_4'])
+protein = st.sidebar.number_input(texts['protein_label'], min_value=0.0, step=0.1, value=None, help=texts['help_protein'])
+ifnurclaim = st.sidebar.selectbox(texts['ifnurclaim_label'], [0, 1], help=texts['help_ifnurclaim'])
 
 # 添加预测按钮样式
 if st.sidebar.button(texts['predict_button'], type="primary", use_container_width=True):
