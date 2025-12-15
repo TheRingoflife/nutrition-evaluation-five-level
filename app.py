@@ -48,7 +48,7 @@ TEXTS = {
         "help_total_fat": "Total fat content per 100g of food",
         "help_procef_4": "0=Not ultra-processed, 1=Ultra-processed",
         "help_protein": "Protein content per 100g of food",
-        "help_ifnurclaim": "0=No nutrition claim, 1=Has nutrition claim"
+        "help_ifnurclaim": "0=No nutrition claim, 1=Has nutrition claim",
         "predict_button": "🧮 Predict Healthiness",
         "prediction_result": "🔍 Prediction Result",
         "health_categories": {
