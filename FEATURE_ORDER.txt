@@ -1,0 +1,6 @@
+Use this order, unscaled pack values, then scaler2.transform:
+1. Sodium
+2. Energy
+3. Total fat
+4. procef_4
+5. Protein
