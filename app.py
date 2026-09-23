@@ -29,118 +29,278 @@ LANGUAGES = {
 
 TEXTS = {
     "en": {
-        "title": "🍱 Nutritional Quality Classifier",
-        "subtitle": "Nutrition quality assessment based on HSR-generated labels (5-class A-E)",
-        "description": "This advanced machine learning application uses RandomForest, based on key nutritional features, to perform nutrition quality assessment of ready foods based on HSR-generated labels (five classes, A-E). The main point is that a small set of routinely labelled nutrients can closely approximate overall HSR nutrition quality assessment results.",
-        "target_audience": "🎯 Target Audience",
-        "audience_desc": "Designed for countries with limited nutritional information where generalized positive labelling is difficult to implement.",
+        "title": "🍱 HSR-Derived Front-of-Pack Labelling Prototype",
+        "subtitle": "Five-Category Letter-Grade Classification (A–E)",
+        "description": (
+            "This prototype uses a locked random forest model and five predictors "
+            "derived from routinely available on-pack information to generate an "
+            "approximate five-category HSR-derived classification for prepackaged "
+            "ready foods."
+        ),
+        "target_audience": "🎯 Intended Users",
+        "audience_desc": (
+            "Designed for researchers and public-health practitioners exploring "
+            "food-supply monitoring in settings where complete HSR inputs are unavailable."
+        ),
         "problem_statement": "📊 Problem Statement",
-        "problem_desc": "Many countries lack comprehensive nutritional labeling systems, making it difficult to implement generalized positive labeling for food products.",
-        "solution": "💡 Our Solution",
-        "solution_desc": "The ML model analyzes 5 key on-pack features (sodium, energy, total fat, NOVA, protein) to approximate the HSR-generated A-E class, with detailed explanations.",
-        "mission": "🚀 Mission",
-        "mission_desc": "Providing a practical approach for countries with incomplete nutritional information that cannot directly calculate a complete HSR: approximating HSR-generated nutrition quality assessment with a small set of on-pack nutrients. This is only a preliminary validation; current results reflect nutrition quality based on a partial set of nutrients.",
-        "input_variables": "🔢 Input Variables",
-        "sodium_label": "Sodium (mg/100g)",
-        "energy_label": "Energy (kJ/100g)",
-        "total_fat_label": "Total Fat (g/100g)",
+        "problem_desc": (
+            "Direct HSR calculation requires nutritional and compositional inputs "
+            "that may not be routinely reported on food labels."
+        ),
+        "solution": "💡 Prototype Approach",
+        "solution_desc": (
+            "The locked model uses five predictors derived from on-pack information—"
+            "sodium, energy, total fat, NOVA 4 status and protein—to approximate one "
+            "of five HSR-derived categories and provides SHAP-based explanations of "
+            "individual predictions."
+        ),
+        "mission": "🚀 Intended Application",
+        "mission_desc": (
+            "This prototype demonstrates a reduced-input approach for exploratory "
+            "food-supply monitoring and comparisons among products within the same "
+            "ready-food category when complete inputs for direct HSR calculation are "
+            "unavailable. The A–E outputs are predicted HSR-derived categories and "
+            "should not be interpreted as formal Health Star Ratings, Nutri-Score "
+            "grades or independent assessments of overall product healthfulness."
+        ),
+        "input_variables": "🔢 Available On-Pack Input Variables",
+        "sodium_label": "Sodium (mg/100 g)",
+        "energy_label": "Energy (kJ/100 g)",
+        "total_fat_label": "Total fat (g/100 g)",
         "nova_label": "NOVA category",
-        "protein_label": "Protein (g/100g)",
-        "help_sodium": "Sodium content per 100g of food",
-        "help_energy": "Energy content per 100g of food (kJ, not kcal)",
-        "help_total_fat": "Total fat content per 100g of food",
-        "help_nova": "procef_4 = 1 only when NOVA = 4",
-        "help_protein": "Protein content per 100g of food",
-        "nova_options": {1: "NOVA 1 (unprocessed / minimally processed)", 3: "NOVA 3 (processed)", 4: "NOVA 4 (ultra-processed)"},
-        "predict_button": "🧮 Predict nutrition quality class",
+        "protein_label": "Protein (g/100 g)",
+        "help_sodium": "Sodium content per 100 g of the product",
+        "help_energy": "Energy content per 100 g of the product (kJ, not kcal)",
+        "help_total_fat": "Total fat content per 100 g of the product",
+        "help_nova": (
+            "The model uses a binary NOVA 4 indicator: procef_4 = 1 for NOVA 4 "
+            "products and 0 otherwise."
+        ),
+        "help_protein": "Protein content per 100 g of the product",
+        "nova_options": {
+            1: "NOVA 1 (unprocessed or minimally processed)",
+            3: "NOVA 3 (processed food)",
+            4: "NOVA 4 (ultra-processed food)",
+        },
+        "predict_button": "🧮 Generate Predicted HSR-Derived Category",
         "prediction_result": "🔍 Prediction Result",
         "health_categories": {
-            0: {"name": "Grade E", "icon": "🔴", "color": "#dc3545", "description": "HSR-generated class E"},
-            1: {"name": "Grade D", "icon": "🟠", "color": "#fd7e14", "description": "HSR-generated class D"},
-            2: {"name": "Grade C", "icon": "🟡", "color": "#ffc107", "description": "HSR-generated class C"},
-            3: {"name": "Grade B", "icon": "🟢", "color": "#28a745", "description": "HSR-generated class B"},
-            4: {"name": "Grade A", "icon": "💚", "color": "#20c997", "description": "HSR-generated class A"},
+            0: {
+                "name": "Category E",
+                "icon": "🔴",
+                "color": "#dc3545",
+                "description": "Predicted HSR-derived category E",
+            },
+            1: {
+                "name": "Category D",
+                "icon": "🟠",
+                "color": "#fd7e14",
+                "description": "Predicted HSR-derived category D",
+            },
+            2: {
+                "name": "Category C",
+                "icon": "🟡",
+                "color": "#ffc107",
+                "description": "Predicted HSR-derived category C",
+            },
+            3: {
+                "name": "Category B",
+                "icon": "🟢",
+                "color": "#28a745",
+                "description": "Predicted HSR-derived category B",
+            },
+            4: {
+                "name": "Category A",
+                "icon": "💚",
+                "color": "#20c997",
+                "description": "Predicted HSR-derived category A",
+            },
         },
-        "confidence": "Confidence",
+        "confidence": "Model-Estimated Probability",
         "feature_importance": "📊 Feature Importance",
         "shap_plot": "📊 SHAP Force Plot",
-        "base_value": "Base value",
-        "final_prediction": "Final prediction",
-        "expand_shap": "Click to view SHAP force plot",
+        "base_value": "Baseline Model Output",
+        "final_prediction": "Final Model Output",
+        "expand_shap": "Click to view the SHAP force plot",
         "shap_success": "✅ SHAP force plot created (Matplotlib version)!",
-        "shap_html_success": "✅ SHAP force plot created (HTML version - Backup)!",
-        "shap_custom_success": "✅ SHAP force plot created (Custom version with feature names)!",
+        "shap_html_success": "✅ SHAP force plot created (HTML backup version)!",
+        "shap_custom_success": (
+            "✅ SHAP force plot created "
+            "(custom version with predictor names)!"
+        ),
         "shap_table": "📊 SHAP Values Table",
-        "shap_table_info": "💡 SHAP values displayed as table",
-        "prediction_probabilities": "Prediction Probabilities",
-        "positive_impact": "Positive impact (toward this HSR-generated class)",
-        "negative_impact": "Negative impact (away from this HSR-generated class)",
-        "warning_input": "⚠️ Please enter values for at least one feature before predicting.",
-        "input_tip": "💡 Tip: Please fill in according to the information on the product pack.",
-        "model_error": "❌ Cannot proceed without model and scaler files",
+        "shap_table_info": (
+            "💡 SHAP values show how each input contributes to the model output "
+            "for the selected category."
+        ),
+        "prediction_probabilities": "Model-Estimated Category Probabilities",
+        "positive_impact": (
+            "Positive contribution toward this HSR-derived category"
+        ),
+        "negative_impact": (
+            "Negative contribution away from this HSR-derived category"
+        ),
+        "warning_input": (
+            "⚠️ Please enter the required input values before generating a prediction."
+        ),
+        "input_tip": (
+            "💡 Enter the nutrient values exactly as declared per 100 g on the "
+            "product package."
+        ),
+        "model_error": (
+            "❌ Prediction cannot proceed because the required model or "
+            "preprocessing files are unavailable."
+        ),
         "prediction_failed": "Prediction failed",
         "shap_failed": "SHAP analysis failed",
-        "shap_unavailable": "💡 SHAP explanation is not available, but feature importance is shown above.",
-        "footer": "Developed using Streamlit and RandomForest · For research use only.",
-        "feature_names": ["Sodium", "Energy", "Total fat", "procef_4", "Protein"],
-        "chart_feature_names": ["Sodium", "Energy", "Total fat", "procef_4", "Protein"],
+        "shap_unavailable": (
+            "💡 A SHAP explanation is unavailable, but feature importance is "
+            "shown above."
+        ),
+        "footer": (
+            "Developed using Streamlit and random forest · "
+            "For exploratory research use only."
+        ),
+        "feature_names": [
+            "Sodium",
+            "Energy",
+            "Total fat",
+            "procef_4",
+            "Protein",
+        ],
+        "chart_feature_names": [
+            "Sodium",
+            "Energy",
+            "Total fat",
+            "NOVA 4 indicator",
+            "Protein",
+        ],
     },
+
     "zh": {
-        "title": "🍱 营养质量分类器",
-        "subtitle": "基于HSR生成的营养质量评估（五分类A-E）",
-        "description": "这个先进的机器学习应用程序使用随机森林根据关键营养特征，对预制食品进行基于HSR生成的营养质量评估（五分类A-E）。主要体现的是：少数常规标示营养素仍可较高程度近似HSR整体营养质量评估结果。",
-        "target_audience": "🎯 目标用户",
-        "audience_desc": "专为营养信息有限、难以实施概括性正面标签的国家设计。",
+        "title": "🍱 HSR衍生正面标签原型",
+        "subtitle": "五分类字母等级标签（A–E）",
+        "description": (
+            "本原型使用已锁定的随机森林模型，根据包装信息获得的五项预测变量，"
+            "为预包装即食食品生成近似的五分类HSR衍生结果。"
+        ),
+        "target_audience": "🎯 预期使用者",
+        "audience_desc": (
+            "面向在缺少完整HSR计算所需信息的情况下，开展食品供应监测探索的"
+            "研究人员和公共卫生实践人员。"
+        ),
         "problem_statement": "📊 问题陈述",
-        "problem_desc": "许多国家缺乏全面的营养标签系统，难以实施食品的概括性正面标签。",
-        "solution": "💡 我们的解决方案",
-        "solution_desc": "ML模型分析5个包装特征（钠、能量、总脂肪、NOVA、蛋白质），近似HSR生成的A-E类别，并给出详细解释。",
-        "mission": "🚀 使命",
-        "mission_desc": "为营养信息不全、无法直接计算完整HSR的国家提供一个使用思路：用少量包装营养素近似HSR生成的营养质量评估。当前只是初步验证，当前结果只是部分营养素上的营养质量。",
-        "input_variables": "🔢 输入变量",
-        "sodium_label": "钠 (mg/100g)",
-        "energy_label": "能量 (kJ/100g)",
-        "total_fat_label": "总脂肪 (g/100g)",
-        "nova_label": "NOVA 类别",
-        "protein_label": "蛋白质 (g/100g)",
-        "help_sodium": "每100g食品中的钠含量",
-        "help_energy": "每100g食品中的能量含量（kJ，不是kcal）",
-        "help_total_fat": "每100g食品中的总脂肪含量",
-        "help_nova": "仅当NOVA=4时，procef_4=1",
-        "help_protein": "每100g食品中的蛋白质含量",
-        "nova_options": {1: "NOVA 1（未加工/最低限度加工）", 3: "NOVA 3（加工食品）", 4: "NOVA 4（超加工食品）"},
-        "predict_button": "🧮 预测营养质量类别",
+        "problem_desc": (
+            "直接计算HSR需要多项营养和食品组成信息，而这些信息未必都会在"
+            "食品标签上常规标示。"
+        ),
+        "solution": "💡 原型方法",
+        "solution_desc": (
+            "已锁定的模型使用钠、能量、总脂肪、NOVA 4状态和蛋白质五项"
+            "基于包装信息的预测变量，近似预测五个HSR衍生类别之一，并使用"
+            "SHAP解释各输入变量对单次预测的贡献。"
+        ),
+        "mission": "🚀 预期应用",
+        "mission_desc": (
+            "当无法获得直接计算HSR所需的完整信息时，本原型展示了一种基于较少"
+            "输入的探索性食品供应监测方法，并可辅助比较同一即食食品类别内产品"
+            "的相对差异。A–E为预测的HSR衍生类别，不代表正式的健康星级评分或"
+            "Nutri-Score等级，也不构成对产品整体健康程度的独立评价。"
+        ),
+        "input_variables": "🔢 包装上可获得的输入变量",
+        "sodium_label": "钠（mg/100 g）",
+        "energy_label": "能量（kJ/100 g）",
+        "total_fat_label": "总脂肪（g/100 g）",
+        "nova_label": "NOVA类别",
+        "protein_label": "蛋白质（g/100 g）",
+        "help_sodium": "产品每100 g中的钠含量",
+        "help_energy": "产品每100 g中的能量含量（单位为kJ，而非kcal）",
+        "help_total_fat": "产品每100 g中的总脂肪含量",
+        "help_nova": (
+            "模型使用二元NOVA 4指标：NOVA 4产品的procef_4为1，"
+            "其他类别为0。"
+        ),
+        "help_protein": "产品每100 g中的蛋白质含量",
+        "nova_options": {
+            1: "NOVA 1（未加工或最低限度加工食品）",
+            3: "NOVA 3（加工食品）",
+            4: "NOVA 4（超加工食品）",
+        },
+        "predict_button": "🧮 生成预测的HSR衍生类别",
         "prediction_result": "🔍 预测结果",
         "health_categories": {
-            0: {"name": "E级", "icon": "🔴", "color": "#dc3545", "description": "HSR生成的E级"},
-            1: {"name": "D级", "icon": "🟠", "color": "#fd7e14", "description": "HSR生成的D级"},
-            2: {"name": "C级", "icon": "🟡", "color": "#ffc107", "description": "HSR生成的C级"},
-            3: {"name": "B级", "icon": "🟢", "color": "#28a745", "description": "HSR生成的B级"},
-            4: {"name": "A级", "icon": "💚", "color": "#20c997", "description": "HSR生成的A级"},
+            0: {
+                "name": "E类",
+                "icon": "🔴",
+                "color": "#dc3545",
+                "description": "预测的HSR衍生E类",
+            },
+            1: {
+                "name": "D类",
+                "icon": "🟠",
+                "color": "#fd7e14",
+                "description": "预测的HSR衍生D类",
+            },
+            2: {
+                "name": "C类",
+                "icon": "🟡",
+                "color": "#ffc107",
+                "description": "预测的HSR衍生C类",
+            },
+            3: {
+                "name": "B类",
+                "icon": "🟢",
+                "color": "#28a745",
+                "description": "预测的HSR衍生B类",
+            },
+            4: {
+                "name": "A类",
+                "icon": "💚",
+                "color": "#20c997",
+                "description": "预测的HSR衍生A类",
+            },
         },
-        "confidence": "置信度",
+        "confidence": "模型估计概率",
         "feature_importance": "📊 特征重要性",
         "shap_plot": "📊 SHAP力图",
-        "base_value": "基准值",
-        "final_prediction": "最终预测",
+        "base_value": "模型基准输出",
+        "final_prediction": "最终模型输出",
         "expand_shap": "点击查看SHAP力图",
-        "shap_success": "✅ SHAP力图创建成功 (Matplotlib版本)!",
-        "shap_html_success": "✅ SHAP力图创建成功 (HTML版本 - 备用)!",
-        "shap_custom_success": "✅ SHAP力图创建成功 (自定义版本，包含特征名称)!",
+        "shap_success": "✅ SHAP力图已生成（Matplotlib版本）！",
+        "shap_html_success": "✅ SHAP力图已生成（HTML备用版本）！",
+        "shap_custom_success": "✅ SHAP力图已生成（包含变量名称的自定义版本）！",
         "shap_table": "📊 SHAP值表格",
-        "shap_table_info": "💡 SHAP值以表格形式显示",
-        "prediction_probabilities": "预测概率",
-        "positive_impact": "积极影响（推向该HSR生成类别）",
-        "negative_impact": "消极影响（离开该HSR生成类别）",
-        "warning_input": "⚠️ 请在预测前至少输入一个特征的值。",
-        "input_tip": "💡 提示：请按照产品包装上信息填写。",
-        "model_error": "❌ 没有模型和标准化器文件无法继续",
+        "shap_table_info": (
+            "💡 SHAP值表示各输入变量对所选类别模型输出的贡献。"
+        ),
+        "prediction_probabilities": "各类别的模型估计概率",
+        "positive_impact": "推动模型输出趋向该HSR衍生类别的正向贡献",
+        "negative_impact": "推动模型输出远离该HSR衍生类别的负向贡献",
+        "warning_input": "⚠️ 请填写所需的输入变量后再进行预测。",
+        "input_tip": "💡 请按照产品包装标示填写每100 g的营养素数值。",
+        "model_error": "❌ 缺少所需的模型或预处理文件，无法进行预测。",
         "prediction_failed": "预测失败",
         "shap_failed": "SHAP分析失败",
-        "shap_unavailable": "💡 SHAP解释不可用，但上面显示了特征重要性。",
-        "footer": "使用Streamlit和随机森林开发 · 仅供研究使用。",
-        "feature_names": ["钠", "能量", "总脂肪", "procef_4", "蛋白质"],
-        "chart_feature_names": ["Sodium", "Energy", "Total fat", "procef_4", "Protein"],
+        "shap_unavailable": (
+            "💡 当前无法生成SHAP解释，但上方仍显示特征重要性。"
+        ),
+        "footer": (
+            "使用Streamlit和随机森林开发 · 仅供探索性研究使用。"
+        ),
+        "feature_names": [
+            "钠",
+            "能量",
+            "总脂肪",
+            "procef_4",
+            "蛋白质",
+        ],
+        "chart_feature_names": [
+            "Sodium",
+            "Energy",
+            "Total fat",
+            "NOVA 4 indicator",
+            "Protein",
+        ],
     },
 }
 
